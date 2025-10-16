@@ -54,6 +54,17 @@ export default function Home() {
               </p>
             </Link>
             <Link
+              to="/effect-atom"
+              className="block p-4 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:hover:bg-amber-900 transition-colors"
+            >
+              <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                Effect-Atom
+              </h3>
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                Atoms backed by Effect services and SubscriptionRef state
+              </p>
+            </Link>
+            <Link
               to="/mobx-keystone"
               className="block p-4 rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950 dark:hover:bg-orange-900 transition-colors"
             >

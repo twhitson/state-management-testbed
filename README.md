@@ -82,6 +82,14 @@ Make sure to deploy the output of `npm run build`
 
 This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
 
+## Effect DevTools
+
+The Effect-Atom example is wired up to the [Effect DevTools](https://github.com/Effect-TS/vscode-extension). To inspect traces:
+
+1. Install the VS Code extension and click “Start the server” in the DevTools panel.
+2. Run the app (`yarn dev`). The browser bundle connects automatically to `ws://localhost:34437`.
+3. If you need a different host/port, set `VITE_EFFECT_DEVTOOLS_URL` in your `.env` file (for example, `ws://host.docker.internal:34437` when running inside Docker) before starting the dev server.
+
 ---
 
 Built with ❤️ using React Router.
