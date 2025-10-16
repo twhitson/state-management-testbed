@@ -1,3 +1,23 @@
+/**
+ * @fileoverview Redux-Saga Example
+ *
+ * This file demonstrates using redux-saga for managing complex async workflows
+ * with multiple sequential operations using generator functions.
+ *
+ * Key concepts demonstrated:
+ * - Generator functions with yield for sequential async operations
+ * - Saga effects: call(), put(), takeEvery()
+ * - Optimistic updates (updating UI before async operations complete)
+ * - Error handling with try/catch in sagas
+ * - Calling sagas from other sagas with yield call()
+ *
+ * Comparison with Thunks:
+ * - Sagas use generator functions (*) instead of async/await
+ * - Sagas use "effects" (call, put) instead of direct dispatch/await
+ * - Sagas are easier to test because effects are plain objects
+ * - Sagas can be more powerful for complex workflows (racing, debouncing, etc.)
+ */
+
 import { call, put, takeEvery } from "redux-saga/effects";
 import {
   createDocumentRequest,
@@ -7,33 +27,103 @@ import {
   type Page,
 } from "./documents.slice";
 
-// API/Service functions (simulating async operations)
+/**
+ * Creates a directory for a document on the file system.
+ *
+ * Simulates a file system operation to create a directory for the document.
+ * In a real application, this would make an API call to a backend service.
+ *
+ * NOTE: This is a generator function that yields a call effect.
+ *
+ * @generator
+ * @param {string} id - The document ID to create a directory for
+ * @yields {CallEffect} A call effect to execute the async operation
+ * @returns {string} The path to the created directory
+ *
+ * @example
+ * const path = yield call(createDocumentDirectory, 'doc-123');
+ * // path === 'C:/Users/trey/doc-123'
+ */
 function* createDocumentDirectory(id: string): Generator<any, string, any> {
-  // Simulate waiting for a response
+  // yield call() executes the async operation and waits for it to complete
+  // This is similar to 'await' in async/await, but returns an effect object
   yield call(() => new Promise((resolve) => setTimeout(resolve, 100)));
   return `C:/Users/trey/${id}`;
 }
 
+/**
+ * Creates a directory for a page within a document's directory structure.
+ *
+ * @generator
+ * @param {string} path - The parent document's directory path
+ * @param {string} id - The page ID to create a directory for
+ * @yields {CallEffect} A call effect to execute the async operation
+ * @returns {string} The path to the created page directory
+ *
+ * @example
+ * const pagePath = yield call(createPageDirectory, 'C:/Users/trey/doc-123', 'page-456');
+ * // pagePath === 'C:/Users/trey/doc-123/page-456'
+ */
 function* createPageDirectory(
   path: string,
   id: string,
 ): Generator<any, string, any> {
-  // Simulate waiting for a response
+  // Simulate network delay
   yield call(() => new Promise((resolve) => setTimeout(resolve, 100)));
   return `${path}/${id}`;
 }
 
+/**
+ * Writes the initial content to a page file.
+ *
+ * ⚠️ NOTE: This intentionally throws an error to demonstrate error handling!
+ *
+ * @generator
+ * @param {string} path - The page directory path
+ * @param {string} content - The content to write to the page
+ * @yields {CallEffect} A call effect to execute the async operation
+ * @returns {void}
+ * @throws {Error} Always throws "LOL" error for demonstration purposes
+ *
+ * @example
+ * try {
+ *   yield call(writePageContents, '/path/to/page', '');
+ * } catch (error) {
+ *   console.error('Expected error:', error); // "LOL"
+ * }
+ */
 function* writePageContents(
   path: string,
   content: string,
 ): Generator<any, void, any> {
-  // Simulate an error
+  // Intentional error to demonstrate error handling in sagas
   throw new Error("LOL");
-  // Simulate waiting for a response
+  // Simulate network delay (unreachable due to error above)
   yield call(() => new Promise((resolve) => setTimeout(resolve, 100)));
 }
 
-// Worker saga: handles creating a page
+/**
+ * Worker saga that creates a page within a document.
+ *
+ * This saga orchestrates multiple operations:
+ * 1. ⚡ OPTIMISTIC UPDATE: Adds the page to state immediately
+ * 2. Creates the page directory on the file system
+ * 3. Writes the page contents to disk
+ *
+ * This is a "worker saga" - it performs the actual work when triggered.
+ *
+ * @generator
+ * @param {string} documentId - The ID of the document to add the page to
+ * @param {string} path - The parent document's directory path
+ * @yields {PutEffect} A put effect to dispatch actions to Redux
+ * @yields {CallEffect} Call effects to execute async operations
+ * @returns {void}
+ * @throws {Error} If page directory creation fails
+ * @throws {Error} If writing page contents fails
+ *
+ * @example
+ * yield call(createPageSaga, 'doc-123', 'C:/Users/trey/doc-123');
+ */
 function* createPageSaga(
   documentId: string,
   path: string,
@@ -47,27 +137,62 @@ function* createPageSaga(
       content: "",
     };
 
-    // Optimistically add the page
+    // ⚡ OPTIMISTIC UPDATE #2: Add page to document immediately
+    // yield put() dispatches an action to the Redux store
+    // This is similar to dispatch() in thunks, but returns an effect object
     yield put(addPage({ documentId, page }));
 
-    // Create page directory
+    // Step 1: Create the page's directory
+    // yield call() invokes another saga and waits for it to complete
     const pagePath: string = yield call(createPageDirectory, path, pageId);
 
-    // Write page contents
+    // Step 2: Write the page contents to disk
+    // This will throw an error, demonstrating error handling
     yield call(writePageContents, pagePath, "");
 
     console.log("Created page", page);
   } catch (error) {
     console.error("Failed to create page:", error);
-    throw error;
+    // In a production app, you might:
+    // - Dispatch a failure action: yield put(createPageFailed(error))
+    // - Remove the optimistically added page: yield put(removePage({documentId, pageId}))
+    // - Show a notification to the user
+    throw error; // Re-throw to propagate to parent saga
   }
 }
 
-// Worker saga: handles creating a document
+/**
+ * Worker saga that creates a new document with a default page.
+ *
+ * This is the main saga that orchestrates the entire document creation workflow.
+ * It demonstrates:
+ * 1. ⚡ OPTIMISTIC UPDATE: Adding the document to state immediately
+ * 2. Calling multiple async operations sequentially
+ * 3. Calling other sagas with yield call()
+ * 4. Error handling with try/catch
+ *
+ * This saga is triggered by the createDocumentRequest action.
+ *
+ * The workflow:
+ * 1. Generate document data with a unique ID
+ * 2. Optimistically add the document to state (UI updates immediately)
+ * 3. Create the document's directory on the file system
+ * 4. Create a default page for the document (calls createPageSaga)
+ *
+ * @generator
+ * @yields {PutEffect} Put effects to dispatch actions to Redux
+ * @yields {CallEffect} Call effects to execute async operations and other sagas
+ * @returns {void}
+ *
+ * @example
+ * // Triggered automatically when createDocumentRequest action is dispatched
+ * dispatch(createDocumentRequest());
+ */
 function* createDocumentSaga(): Generator<any, void, any> {
   try {
     console.log("Creating document");
 
+    // Generate document data
     const id = crypto.randomUUID();
     const document: Document = {
       id,
@@ -76,30 +201,78 @@ function* createDocumentSaga(): Generator<any, void, any> {
       pages: [],
     };
 
-    // Optimistically update the UI
+    // ⚡ OPTIMISTIC UPDATE #1: Add document to state immediately
+    // yield put() dispatches the addDocument action to update the state
+    // This makes the UI feel responsive by showing the document right away
     yield put(addDocument(document));
 
-    // Create document directory
+    // Step 1: Create the document's directory on the file system
+    // yield call() invokes the createDocumentDirectory saga
     const path: string = yield call(createDocumentDirectory, id);
 
-    // Create a page for the document
+    // Step 2: Create a default page for the document
+    // yield call() invokes another worker saga (createPageSaga)
+    // This demonstrates how sagas can call other sagas to compose workflows
     yield call(createPageSaga, id, path);
 
     console.log("Created document", document);
   } catch (error) {
     console.error("Failed to create document:", error);
-    // Note: In the thunk version, errors are thrown and not caught here.
-    // For sagas, you might want to dispatch a failure action or remove the optimistically added document
-    // For now, we'll keep the same behavior as the thunk version
+    // Error handling: In a production app, you might:
+    // - Dispatch a failure action: yield put(createDocumentFailed(error))
+    // - Remove the optimistically added document: yield put(removeDocument(id))
+    // - Show a notification to the user
+    // For now, we just log the error to match the thunk behavior
   }
 }
 
-// Watcher saga: watches for createDocumentRequest actions
+/**
+ * Watcher saga that listens for document creation requests.
+ *
+ * This is a "watcher saga" - it listens for specific actions and triggers
+ * worker sagas in response.
+ *
+ * takeEvery() means: every time a createDocumentRequest action is dispatched,
+ * run createDocumentSaga. If multiple actions come in, run multiple sagas
+ * concurrently.
+ *
+ * Alternative saga effects you might use:
+ * - takeLatest(): Cancel previous saga if a new action comes in
+ * - takeLeading(): Ignore new actions while a saga is running
+ * - debounce(): Wait before running the saga (useful for search inputs)
+ * - throttle(): Limit how often the saga runs
+ *
+ * @generator
+ * @yields {TakeEveryEffect} A takeEvery effect that watches for actions
+ * @returns {void}
+ *
+ * @example
+ * // This watcher is started by the root saga
+ * yield call(watchCreateDocument);
+ */
 export function* watchCreateDocument() {
   yield takeEvery(createDocumentRequest.type, createDocumentSaga);
 }
 
-// Root saga for documents
+/**
+ * Root saga for the documents feature.
+ *
+ * This saga starts all watcher sagas for the documents feature.
+ * In a larger app, you might have multiple watcher sagas here.
+ *
+ * @generator
+ * @yields {CallEffect} Call effects to start watcher sagas
+ * @returns {void}
+ *
+ * @example
+ * // Started by the root saga in rootSaga.ts
+ * yield all([call(documentsSaga)]);
+ *
+ * @remarks
+ * Note: yield call() ensures this saga blocks until watchers are set up.
+ * This is important for ensuring the watchers are ready before any actions
+ * are dispatched.
+ */
 export function* documentsSaga() {
   yield call(watchCreateDocument);
 }
