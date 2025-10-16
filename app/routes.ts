@@ -6,6 +6,7 @@ export default [
   route("redux/thunk", "routes/redux.thunk.tsx"),
   route("redux/saga", "routes/redux.saga.tsx"),
   route("redux/observable", "routes/redux.observable.tsx"),
+  route("redux/vanilla", "routes/redux.vanilla.tsx"),
   route("zustand", "routes/zustand.tsx"),
   route("effect-atom", "routes/effect-atom.tsx"),
 ] satisfies RouteConfig;

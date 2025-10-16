@@ -54,6 +54,17 @@ export default function Home() {
               </p>
             </Link>
             <Link
+              to="/redux/vanilla"
+              className="block p-4 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950 dark:hover:bg-rose-900 transition-colors"
+            >
+              <h3 className="font-semibold text-rose-900 dark:text-rose-100 mb-1">
+                Vanilla Redux
+              </h3>
+              <p className="text-sm text-rose-700 dark:text-rose-300">
+                Raw reducers and custom thunk middleware
+              </p>
+            </Link>
+            <Link
               to="/zustand"
               className="block p-4 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950 dark:hover:bg-purple-900 transition-colors"
             >
