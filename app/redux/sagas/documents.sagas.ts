@@ -30,19 +30,21 @@ import {
 /**
  * Creates a directory for a document on the file system.
  *
+ * @remarks
  * Simulates a file system operation to create a directory for the document.
  * In a real application, this would make an API call to a backend service.
  *
  * NOTE: This is a generator function that yields a call effect.
  *
- * @generator
- * @param {string} id - The document ID to create a directory for
- * @yields {CallEffect} A call effect to execute the async operation
- * @returns {string} The path to the created directory
+ * @param id - The document ID to create a directory for
+ * @yields A call effect to execute the async operation
+ * @returns The path to the created directory
  *
  * @example
+ * ```ts
  * const path = yield call(createDocumentDirectory, 'doc-123');
  * // path === 'C:/Users/trey/doc-123'
+ * ```
  */
 function* createDocumentDirectory(id: string): Generator<any, string, any> {
   // yield call() executes the async operation and waits for it to complete
@@ -54,15 +56,16 @@ function* createDocumentDirectory(id: string): Generator<any, string, any> {
 /**
  * Creates a directory for a page within a document's directory structure.
  *
- * @generator
- * @param {string} path - The parent document's directory path
- * @param {string} id - The page ID to create a directory for
- * @yields {CallEffect} A call effect to execute the async operation
- * @returns {string} The path to the created page directory
+ * @param path - The parent document's directory path
+ * @param id - The page ID to create a directory for
+ * @yields A call effect to execute the async operation
+ * @returns The path to the created page directory
  *
  * @example
+ * ```ts
  * const pagePath = yield call(createPageDirectory, 'C:/Users/trey/doc-123', 'page-456');
  * // pagePath === 'C:/Users/trey/doc-123/page-456'
+ * ```
  */
 function* createPageDirectory(
   path: string,
@@ -76,21 +79,23 @@ function* createPageDirectory(
 /**
  * Writes the initial content to a page file.
  *
+ * @remarks
  * ⚠️ NOTE: This intentionally throws an error to demonstrate error handling!
  *
- * @generator
- * @param {string} path - The page directory path
- * @param {string} content - The content to write to the page
- * @yields {CallEffect} A call effect to execute the async operation
- * @returns {void}
- * @throws {Error} Always throws "LOL" error for demonstration purposes
+ * @param path - The page directory path
+ * @param content - The content to write to the page
+ * @yields A call effect to execute the async operation
+ * @returns void
+ * @throws Always throws "LOL" error for demonstration purposes
  *
  * @example
+ * ```ts
  * try {
  *   yield call(writePageContents, '/path/to/page', '');
  * } catch (error) {
  *   console.error('Expected error:', error); // "LOL"
  * }
+ * ```
  */
 function* writePageContents(
   path: string,
@@ -105,6 +110,7 @@ function* writePageContents(
 /**
  * Worker saga that creates a page within a document.
  *
+ * @remarks
  * This saga orchestrates multiple operations:
  * 1. ⚡ OPTIMISTIC UPDATE: Adds the page to state immediately
  * 2. Creates the page directory on the file system
@@ -112,17 +118,17 @@ function* writePageContents(
  *
  * This is a "worker saga" - it performs the actual work when triggered.
  *
- * @generator
- * @param {string} documentId - The ID of the document to add the page to
- * @param {string} path - The parent document's directory path
- * @yields {PutEffect} A put effect to dispatch actions to Redux
- * @yields {CallEffect} Call effects to execute async operations
- * @returns {void}
- * @throws {Error} If page directory creation fails
- * @throws {Error} If writing page contents fails
+ * @param documentId - The ID of the document to add the page to
+ * @param path - The parent document's directory path
+ * @yields A put effect to dispatch actions to Redux and call effects to execute async operations
+ * @returns void
+ * @throws If page directory creation fails
+ * @throws If writing page contents fails
  *
  * @example
+ * ```ts
  * yield call(createPageSaga, 'doc-123', 'C:/Users/trey/doc-123');
+ * ```
  */
 function* createPageSaga(
   documentId: string,
@@ -164,6 +170,7 @@ function* createPageSaga(
 /**
  * Worker saga that creates a new document with a default page.
  *
+ * @remarks
  * This is the main saga that orchestrates the entire document creation workflow.
  * It demonstrates:
  * 1. ⚡ OPTIMISTIC UPDATE: Adding the document to state immediately
@@ -179,14 +186,14 @@ function* createPageSaga(
  * 3. Create the document's directory on the file system
  * 4. Create a default page for the document (calls createPageSaga)
  *
- * @generator
- * @yields {PutEffect} Put effects to dispatch actions to Redux
- * @yields {CallEffect} Call effects to execute async operations and other sagas
- * @returns {void}
+ * @yields Put effects to dispatch actions to Redux and call effects to execute async operations and other sagas
+ * @returns void
  *
  * @example
+ * ```ts
  * // Triggered automatically when createDocumentRequest action is dispatched
  * dispatch(createDocumentRequest());
+ * ```
  */
 function* createDocumentSaga(): Generator<any, void, any> {
   try {
@@ -199,6 +206,7 @@ function* createDocumentSaga(): Generator<any, void, any> {
       path: `C:/Users/trey/${id}`,
       title: "New Document",
       pages: [],
+      workspaceIds: [],
     };
 
     // ⚡ OPTIMISTIC UPDATE #1: Add document to state immediately
@@ -229,6 +237,7 @@ function* createDocumentSaga(): Generator<any, void, any> {
 /**
  * Watcher saga that listens for document creation requests.
  *
+ * @remarks
  * This is a "watcher saga" - it listens for specific actions and triggers
  * worker sagas in response.
  *
@@ -242,13 +251,14 @@ function* createDocumentSaga(): Generator<any, void, any> {
  * - debounce(): Wait before running the saga (useful for search inputs)
  * - throttle(): Limit how often the saga runs
  *
- * @generator
- * @yields {TakeEveryEffect} A takeEvery effect that watches for actions
- * @returns {void}
+ * @yields A takeEvery effect that watches for actions
+ * @returns void
  *
  * @example
+ * ```ts
  * // This watcher is started by the root saga
  * yield call(watchCreateDocument);
+ * ```
  */
 export function* watchCreateDocument() {
   yield takeEvery(createDocumentRequest.type, createDocumentSaga);
@@ -257,21 +267,22 @@ export function* watchCreateDocument() {
 /**
  * Root saga for the documents feature.
  *
+ * @remarks
  * This saga starts all watcher sagas for the documents feature.
  * In a larger app, you might have multiple watcher sagas here.
  *
- * @generator
- * @yields {CallEffect} Call effects to start watcher sagas
- * @returns {void}
- *
- * @example
- * // Started by the root saga in rootSaga.ts
- * yield all([call(documentsSaga)]);
- *
- * @remarks
  * Note: yield call() ensures this saga blocks until watchers are set up.
  * This is important for ensuring the watchers are ready before any actions
  * are dispatched.
+ *
+ * @yields Call effects to start watcher sagas
+ * @returns void
+ *
+ * @example
+ * ```ts
+ * // Started by the root saga in rootSaga.ts
+ * yield all([call(documentsSaga)]);
+ * ```
  */
 export function* documentsSaga() {
   yield call(watchCreateDocument);

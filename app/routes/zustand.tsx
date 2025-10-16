@@ -1,60 +1,66 @@
-import type { Route } from "./+types/redux.thunk";
-import { Provider } from "react-redux";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { createDocument, addDocumentToWorkspace } from "../redux/thunks/documents";
-import { fetchWorkspaces } from "../redux/thunks/workspaces";
-import { thunksStore } from "~/redux/thunks/store";
+import type { Route } from "./+types/zustand";
+import { useDocumentsStore } from "~/zustand/documents.store";
+import { useWorkspacesStore } from "~/zustand/workspaces.store";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Redux Thunks - Redux Testbed" },
-    { name: "description", content: "Redux Toolkit with Thunks example" },
+    { title: "Zustand - State Management Testbed" },
+    { name: "description", content: "Zustand state management example" },
   ];
 }
 
-function Content() {
-  const dispatch = useAppDispatch();
-  const documents = useAppSelector((state) => state.documents);
-  const workspaces = useAppSelector((state) => state.workspaces);
+export default function ZustandRoute() {
+  const documents = useDocumentsStore((state) => state.documents);
+  const createDocument = useDocumentsStore((state) => state.createDocument);
+  const addDocumentToWorkspace = useDocumentsStore(
+    (state) => state.addDocumentToWorkspace,
+  );
+
+  const workspaces = useWorkspacesStore((state) => state.workspaces);
+  const fetchWorkspaces = useWorkspacesStore((state) => state.fetchWorkspaces);
 
   const handleCreateDocument = () => {
-    dispatch(createDocument());
+    createDocument();
   };
 
   const handleLoadWorkspaces = () => {
-    dispatch(fetchWorkspaces());
+    fetchWorkspaces();
   };
 
   const handleAddToWorkspace = (documentId: string, workspaceId: string) => {
-    dispatch(addDocumentToWorkspace({ documentId, workspaceId }));
+    addDocumentToWorkspace(documentId, workspaceId);
   };
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-2">Redux Thunks Example</h1>
+      <h1 className="text-3xl font-bold mb-2">Zustand Example</h1>
       <p className="text-gray-600 mb-6">
-        Using Redux Toolkit with createAsyncThunk
+        Using Zustand for simple, direct state management
       </p>
 
-      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-        <h3 className="font-semibold text-blue-900 mb-2">Implementation Details</h3>
-        <p className="text-sm text-blue-800">
-          Using <code className="bg-blue-100 px-1 rounded">createAsyncThunk</code> from Redux Toolkit.
-          Thunks dispatch other thunks in a nested workflow to create documents and pages.
-          Documents maintain workspaceIds array for workspace membership.
+      <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded">
+        <h3 className="font-semibold text-purple-900 mb-2">
+          Implementation Details
+        </h3>
+        <p className="text-sm text-purple-800">
+          Using <code className="bg-purple-100 px-1 rounded">zustand</code> with
+          simple hooks. No reducers, no dispatch, no middleware - just direct
+          function calls to create documents and pages in a coordinated
+          workflow. Documents and workspaces are separate stores, demonstrating
+          Zustand's support for multiple independent stores.
         </p>
       </div>
 
       <div className="space-y-4 mb-8">
         <button
           onClick={handleCreateDocument}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
         >
           Create Document
         </button>
         <button
           onClick={handleLoadWorkspaces}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ml-4"
+          className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 ml-4"
         >
           Load Workspaces
         </button>
@@ -68,18 +74,26 @@ function Content() {
           <div className="space-y-4">
             {Object.values(workspaces).map((workspace) => {
               const workspaceDocs = Object.values(documents).filter((doc) =>
-                doc.workspaceIds.includes(workspace.id)
+                doc.workspaceIds.includes(workspace.id),
               );
               return (
-                <div key={workspace.id} className="p-4 border border-blue-200 rounded bg-blue-50">
-                  <div className="font-semibold text-lg text-blue-900">{workspace.name}</div>
-                  <div className="text-sm text-blue-700 mt-1">
+                <div
+                  key={workspace.id}
+                  className="p-4 border border-purple-200 rounded bg-purple-50"
+                >
+                  <div className="font-semibold text-lg text-purple-900">
+                    {workspace.name}
+                  </div>
+                  <div className="text-sm text-purple-700 mt-1">
                     {workspaceDocs.length} document(s)
                   </div>
                   {workspaceDocs.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {workspaceDocs.map((doc) => (
-                        <div key={doc.id} className="text-sm text-blue-800 pl-4">
+                        <div
+                          key={doc.id}
+                          className="text-sm text-purple-800 pl-4"
+                        >
                           • {doc.title} ({doc.id})
                         </div>
                       ))}
@@ -101,18 +115,20 @@ function Content() {
             <div key={doc.id} className="p-4 border rounded">
               <div className="font-medium">{doc.title}</div>
               <div className="text-sm text-gray-500">{doc.id}</div>
-              <div className="text-sm mt-2">
-                Pages: {doc.pages.length}
-              </div>
+              <div className="text-sm mt-2">Pages: {doc.pages.length}</div>
               {doc.workspaceIds.length > 0 && (
                 <div className="text-sm mt-2">
                   <span className="font-medium">Workspaces: </span>
-                  {doc.workspaceIds.map((wsId) => workspaces[wsId]?.name || wsId).join(", ")}
+                  {doc.workspaceIds
+                    .map((wsId) => workspaces[wsId]?.name || wsId)
+                    .join(", ")}
                 </div>
               )}
               {Object.keys(workspaces).length > 0 && (
                 <div className="mt-3">
-                  <label className="text-sm font-medium mr-2">Add to workspace:</label>
+                  <label className="text-sm font-medium mr-2">
+                    Add to workspace:
+                  </label>
                   <select
                     className="text-sm border rounded px-2 py-1"
                     onChange={(e) => {
@@ -144,13 +160,5 @@ function Content() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function ReduxThunkRoute() {
-  return (
-    <Provider store={thunksStore}>
-      <Content />
-    </Provider>
   );
 }

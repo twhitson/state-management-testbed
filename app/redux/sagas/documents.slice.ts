@@ -18,6 +18,7 @@
  * 5. These reducers update the state
  */
 
+import type { PayloadAction } from "@reduxjs/toolkit";
 import { createSlice } from "@reduxjs/toolkit";
 
 export type Document = {
@@ -25,6 +26,7 @@ export type Document = {
   path: string;
   title: string;
   pages: Page[];
+  workspaceIds: string[];
 };
 
 export type Page = {
@@ -47,6 +49,7 @@ const documentsSlice = createSlice({
     /**
      * Triggers the document creation saga workflow.
      *
+     * @remarks
      * This is a plain Redux action that doesn't modify the state. It exists
      * solely to trigger the watcher saga (watchCreateDocument).
      *
@@ -58,33 +61,37 @@ const documentsSlice = createSlice({
      * This is different from thunks, where you dispatch the thunk directly
      * and it handles all the async logic internally.
      *
-     * @param {DocumentSliceState} state - Current state (not modified)
+     * @param state - Current state (not modified)
      *
      * @example
+     * ```ts
      * // In a React component:
      * const dispatch = useDispatch();
      * dispatch(createDocumentRequest());
+     * ```
      *
-     * @see {@link createDocumentSaga} - The worker saga that handles this action
+     * @see createDocumentSaga - The worker saga that handles this action
      */
-    createDocumentRequest: (state) => {
+    createDocumentRequest: () => {
       // No state changes here - saga will handle the workflow
     },
 
     /**
      * Adds a document to the state.
      *
+     * @remarks
      * ⚡ OPTIMISTIC UPDATE: Called by sagas before async operations complete.
      * This makes the UI feel more responsive by showing the document immediately.
      *
      * This action is dispatched by the saga using:
      * `yield put(addDocument(document))`
      *
-     * @param {DocumentSliceState} state - Current state
-     * @param {Object} action - Redux action
-     * @param {Document} action.payload - The document to add
+     * @param state - Current state
+     * @param action - Redux action
+     * @param action.payload - The document to add
      *
      * @example
+     * ```ts
      * // From within a saga:
      * yield put(addDocument({
      *   id: 'doc-123',
@@ -92,25 +99,28 @@ const documentsSlice = createSlice({
      *   title: 'New Document',
      *   pages: []
      * }));
+     * ```
      */
-    addDocument: (state, action) => {
+    addDocument: (state, action: PayloadAction<Document>) => {
       state[action.payload.id] = action.payload;
     },
 
     /**
      * Adds a page to an existing document.
      *
+     * @remarks
      * ⚡ OPTIMISTIC UPDATE: Called by sagas before async operations complete.
      *
      * This action is dispatched by the saga using:
      * `yield put(addPage({ documentId, page }))`
      *
-     * @param {DocumentSliceState} state - Current state
-     * @param {Object} action - Redux action
-     * @param {string} action.payload.documentId - The document ID to add the page to
-     * @param {Page} action.payload.page - The page to add
+     * @param state - Current state
+     * @param action - Redux action
+     * @param action.payload.documentId - The document ID to add the page to
+     * @param action.payload.page - The page to add
      *
      * @example
+     * ```ts
      * // From within a saga:
      * yield put(addPage({
      *   documentId: 'doc-123',
@@ -120,6 +130,7 @@ const documentsSlice = createSlice({
      *     content: ''
      *   }
      * }));
+     * ```
      */
     addPage: (state, action) => {
       state[action.payload.documentId].pages.push(action.payload.page);
@@ -128,28 +139,60 @@ const documentsSlice = createSlice({
     /**
      * Removes a document from the state.
      *
+     * @remarks
      * Useful for rolling back optimistic updates when async operations fail.
      * For example, if creating a document fails after it was optimistically
      * added, you can dispatch this action to remove it.
      *
-     * @param {DocumentSliceState} state - Current state
-     * @param {Object} action - Redux action
-     * @param {string} action.payload - The ID of the document to remove
+     * @param state - Current state
+     * @param action - Redux action
+     * @param action.payload - The ID of the document to remove
      *
      * @example
+     * ```ts
      * // From within a saga error handler:
      * try {
      *   // ... async operations
      * } catch (error) {
      *   yield put(removeDocument(documentId));
      * }
+     * ```
      */
     removeDocument: (state, action) => {
       delete state[action.payload];
+    },
+
+    /**
+     * Adds a document to a workspace by adding the workspaceId to the document's workspaceIds array.
+     *
+     * @param state - Current state
+     * @param action - Redux action
+     * @param action.payload.documentId - The document ID
+     * @param action.payload.workspaceId - The workspace ID to add
+     *
+     * @example
+     * ```ts
+     * // From within a component or saga:
+     * dispatch(addDocumentToWorkspace({ documentId: 'doc-123', workspaceId: 'ws-1' }));
+     * ```
+     */
+    addDocumentToWorkspace: (state, action) => {
+      const document = state[action.payload.documentId];
+      if (
+        document &&
+        !document.workspaceIds.includes(action.payload.workspaceId)
+      ) {
+        document.workspaceIds.push(action.payload.workspaceId);
+      }
     },
   },
 });
 
 export const documentsReducer = documentsSlice.reducer;
-export const { createDocumentRequest, addDocument, addPage, removeDocument } =
-  documentsSlice.actions;
+export const {
+  createDocumentRequest,
+  addDocument,
+  addPage,
+  removeDocument,
+  addDocumentToWorkspace,
+} = documentsSlice.actions;
