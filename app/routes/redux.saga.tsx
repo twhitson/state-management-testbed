@@ -1,7 +1,11 @@
 import type { Route } from "./+types/redux.saga";
+import { Link } from "react-router";
 import { Provider } from "react-redux";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { createDocumentRequest, addDocumentToWorkspace } from "../redux/sagas/documents.slice";
+import {
+  createDocumentRequest,
+  addDocumentToWorkspace,
+} from "../redux/sagas/documents.slice";
 import { fetchWorkspacesRequest } from "../redux/sagas/workspaces.slice";
 import { sagasStore } from "~/redux/sagas/store";
 
@@ -31,18 +35,27 @@ function Content() {
 
   return (
     <div className="p-8">
+      <Link
+        to="/"
+        className="inline-block mb-4 text-green-600 hover:text-green-800"
+      >
+        ← Home
+      </Link>
       <h1 className="text-3xl font-bold mb-2">Redux-Saga Example</h1>
       <p className="text-gray-600 mb-6">
         Using Redux with redux-saga for side effects
       </p>
 
       <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded">
-        <h3 className="font-semibold text-green-900 mb-2">Implementation Details</h3>
+        <h3 className="font-semibold text-green-900 mb-2">
+          Implementation Details
+        </h3>
         <p className="text-sm text-green-800">
-          Using <code className="bg-green-100 px-1 rounded">redux-saga</code> with generator functions.
-          Sagas call other sagas using <code className="bg-green-100 px-1 rounded">call</code> effects
-          to create documents and pages in a coordinated workflow.
-          Documents maintain workspaceIds array for workspace membership.
+          Using <code className="bg-green-100 px-1 rounded">redux-saga</code>{" "}
+          with generator functions. Sagas call other sagas using{" "}
+          <code className="bg-green-100 px-1 rounded">call</code> effects to
+          create documents and pages in a coordinated workflow. Documents
+          maintain workspaceIds array for workspace membership.
         </p>
       </div>
 
@@ -69,18 +82,26 @@ function Content() {
           <div className="space-y-4">
             {Object.values(workspaces).map((workspace) => {
               const workspaceDocs = Object.values(documents).filter((doc) =>
-                doc.workspaceIds.includes(workspace.id)
+                doc.workspaceIds.includes(workspace.id),
               );
               return (
-                <div key={workspace.id} className="p-4 border border-green-200 rounded bg-green-50">
-                  <div className="font-semibold text-lg text-green-900">{workspace.name}</div>
+                <div
+                  key={workspace.id}
+                  className="p-4 border border-green-200 rounded bg-green-50"
+                >
+                  <div className="font-semibold text-lg text-green-900">
+                    {workspace.name}
+                  </div>
                   <div className="text-sm text-green-700 mt-1">
                     {workspaceDocs.length} document(s)
                   </div>
                   {workspaceDocs.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {workspaceDocs.map((doc) => (
-                        <div key={doc.id} className="text-sm text-green-800 pl-4">
+                        <div
+                          key={doc.id}
+                          className="text-sm text-green-800 pl-4"
+                        >
                           • {doc.title} ({doc.id})
                         </div>
                       ))}
@@ -102,18 +123,20 @@ function Content() {
             <div key={doc.id} className="p-4 border rounded">
               <div className="font-medium">{doc.title}</div>
               <div className="text-sm text-gray-500">{doc.id}</div>
-              <div className="text-sm mt-2">
-                Pages: {doc.pages.length}
-              </div>
+              <div className="text-sm mt-2">Pages: {doc.pages.length}</div>
               {doc.workspaceIds.length > 0 && (
                 <div className="text-sm mt-2">
                   <span className="font-medium">Workspaces: </span>
-                  {doc.workspaceIds.map((wsId) => workspaces[wsId]?.name || wsId).join(", ")}
+                  {doc.workspaceIds
+                    .map((wsId) => workspaces[wsId]?.name || wsId)
+                    .join(", ")}
                 </div>
               )}
               {Object.keys(workspaces).length > 0 && (
                 <div className="mt-3">
-                  <label className="text-sm font-medium mr-2">Add to workspace:</label>
+                  <label className="text-sm font-medium mr-2">
+                    Add to workspace:
+                  </label>
                   <select
                     className="text-sm border rounded px-2 py-1"
                     onChange={(e) => {

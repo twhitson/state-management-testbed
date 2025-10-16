@@ -6,7 +6,7 @@ export function meta({}: Route.MetaArgs) {
     { title: "State Management Testbed" },
     {
       name: "description",
-      content: "Compare Redux Thunks, Redux-Saga, and Zustand",
+      content: "Compare Redux Thunks, Redux-Saga, Zustand, and MobX-Keystone",
     },
   ];
 }
@@ -51,6 +51,17 @@ export default function Home() {
               </h3>
               <p className="text-sm text-purple-700 dark:text-purple-300">
                 Simple and direct state management with hooks
+              </p>
+            </Link>
+            <Link
+              to="/mobx-keystone"
+              className="block p-4 rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950 dark:hover:bg-orange-900 transition-colors"
+            >
+              <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-1">
+                MobX-Keystone
+              </h3>
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                Observable models with type safety and runtime validation
               </p>
             </Link>
           </div>
