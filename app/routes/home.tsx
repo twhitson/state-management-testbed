@@ -43,6 +43,17 @@ export default function Home() {
               </p>
             </Link>
             <Link
+              to="/redux/observable"
+              className="block p-4 rounded-lg border border-cyan-200 bg-cyan-50 hover:bg-cyan-100 dark:border-cyan-800 dark:bg-cyan-950 dark:hover:bg-cyan-900 transition-colors"
+            >
+              <h3 className="font-semibold text-cyan-900 dark:text-cyan-100 mb-1">
+                Redux Observable
+              </h3>
+              <p className="text-sm text-cyan-700 dark:text-cyan-300">
+                RxJS-powered epics coordinating async workflows
+              </p>
+            </Link>
+            <Link
               to="/zustand"
               className="block p-4 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950 dark:hover:bg-purple-900 transition-colors"
             >

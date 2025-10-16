@@ -3324,6 +3324,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"redux-observable@npm:^3.0.0-rc.2":
+  version: 3.0.0-rc.2
+  resolution: "redux-observable@npm:3.0.0-rc.2"
+  peerDependencies:
+    redux: ">=5 <6"
+    rxjs: ">=7 <8"
+  checksum: 10c0/00c67787180bf9fe84c3f7a97464d6ca84de343f4a14492aab3148cc402e60d8e0c06e2c92adf6770b6c6a21a4dc54b0d30296dcd6589c1175b81da3648e21a4
+  languageName: node
+  linkType: hard
+
 "redux-saga@npm:^1.3.0":
   version: 1.3.0
   resolution: "redux-saga@npm:1.3.0"
@@ -3441,6 +3451,15 @@ __metadata:
   bin:
     rollup: dist/bin/rollup
   checksum: 10c0/aaec0f57e887d4fb37d152f93cf7133954eec79d11643e95de768ec9a377f08793b1745c648ca65a0dcc6c795c4d9ca398724d013e5745de270e88a543782aea
+  languageName: node
+  linkType: hard
+
+"rxjs@npm:^7.8.2":
+  version: 7.8.2
+  resolution: "rxjs@npm:7.8.2"
+  dependencies:
+    tslib: "npm:^2.1.0"
+  checksum: 10c0/1fcd33d2066ada98ba8f21fcbbcaee9f0b271de1d38dc7f4e256bfbc6ffcdde68c8bfb69093de7eeb46f24b1fb820620bf0223706cff26b4ab99a7ff7b2e2c45
   languageName: node
   linkType: hard
 
@@ -3730,7 +3749,9 @@ __metadata:
     react-dom: "npm:^19.1.1"
     react-redux: "npm:^9.2.0"
     react-router: "npm:^7.9.2"
+    redux-observable: "npm:^3.0.0-rc.2"
     redux-saga: "npm:^1.3.0"
+    rxjs: "npm:^7.8.2"
     scheduler: "npm:^0.27.0"
     tailwindcss: "npm:^4.1.13"
     typescript: "npm:^5.9.2"
@@ -3852,7 +3873,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.4.0, tslib@npm:^2.8.1":
+"tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62
