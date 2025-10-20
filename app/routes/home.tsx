@@ -6,7 +6,7 @@ export function meta({}: Route.MetaArgs) {
     { title: "State Management Testbed" },
     {
       name: "description",
-      content: "Compare Redux Thunks, Redux-Saga, Zustand, and MobX-Keystone",
+      content: "Compare state management libraries",
     },
   ];
 }
@@ -73,6 +73,17 @@ export default function Home() {
               </h3>
               <p className="text-sm text-purple-700 dark:text-purple-300">
                 Simple and direct state management with hooks
+              </p>
+            </Link>
+            <Link
+              to="/effector"
+              className="block p-4 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950 dark:hover:bg-indigo-900 transition-colors"
+            >
+              <h3 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-1">
+                Effector
+              </h3>
+              <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                Event-driven state with explicit reactive data flow
               </p>
             </Link>
             <Link

@@ -1,10 +1,10 @@
-import { applyMiddleware, createStore } from "redux";
+import { applyMiddleware, legacy_createStore as createStore } from "redux";
 
 import type { AppAction } from "./actions";
 import { rootReducer, type RootState } from "./reducers";
 import type { AppThunk } from "./thunks";
 
-const asyncMiddleware: any =
+const asyncMiddleware =
   ({ dispatch, getState }: any) =>
   (next: any) =>
   (action: AppAction | AppThunk) => {
@@ -16,11 +16,9 @@ const asyncMiddleware: any =
 
 export const vanillaStore = createStore(
   rootReducer,
-  undefined,
-  applyMiddleware(asyncMiddleware),
+  {},
+  applyMiddleware(asyncMiddleware as any),
 );
 
 export type VanillaRootState = RootState;
-export type AppDispatch = (
-  action: AppAction | AppThunk | { type: string },
-) => unknown;
+export type AppDispatch = typeof vanillaStore.dispatch;

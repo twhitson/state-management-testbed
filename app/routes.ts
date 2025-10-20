@@ -8,5 +8,6 @@ export default [
   route("redux/observable", "routes/redux.observable.tsx"),
   route("redux/vanilla", "routes/redux.vanilla.tsx"),
   route("zustand", "routes/zustand.tsx"),
+  route("effector", "routes/effector.tsx"),
   route("effect-atom", "routes/effect-atom.tsx"),
 ] satisfies RouteConfig;
