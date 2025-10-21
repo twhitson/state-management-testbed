@@ -1373,6 +1373,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@withease/factories@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "@withease/factories@npm:1.0.5"
+  checksum: 10c0/ab7c0bda35fed0c855092434b0de89cd481e4bf4ae839bef2bd33eca33652bc020e420c551782d74a4d05dbbc4c21b9c1daa985760caa6a0180b5ef3f92e95da
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:^3.0.0":
   version: 3.0.1
   resolution: "abbrev@npm:3.0.1"
@@ -3751,6 +3758,7 @@ __metadata:
     "@types/node": "npm:^22"
     "@types/react": "npm:^19.1.13"
     "@types/react-dom": "npm:^19.1.9"
+    "@withease/factories": "npm:^1.0.5"
     effect: "npm:^3.18.4"
     effector: "npm:^23.4.4"
     effector-react: "npm:^23.3.0"

@@ -23,13 +23,14 @@
  */
 
 import { createEffect, createEvent, createStore, sample } from "effector";
+import { $workspaces, type Workspace } from "./workspaces.store";
 
 export type Document = {
   id: string;
   path: string;
   title: string;
   pages: Page[];
-  workspaceIds: string[];
+  workspaces: Workspace[];
 };
 
 export type Page = {
@@ -85,7 +86,7 @@ export const pageAdded = createEvent<{
 }>("pageAdded");
 
 /**
- * Event: Add a document to a workspace
+ * Event: Request to add a document to a workspace (by ID)
  *
  * @example
  * ```ts
@@ -96,6 +97,15 @@ export const documentAddedToWorkspace = createEvent<{
   documentId: string;
   workspaceId: string;
 }>("documentAddedToWorkspace");
+
+/**
+ * Internal event: Actually add the workspace reference to the document
+ * This is triggered by sample() after looking up the workspace
+ */
+const addWorkspaceToDocument = createEvent<{
+  documentId: string;
+  workspace: Workspace;
+}>("addWorkspaceToDocument");
 
 /**
  * Effects - async operations
@@ -154,28 +164,22 @@ export const createPageDirectoryFx = createEffect<
  * Effect: Writes the initial content to a page file.
  *
  * @remarks
- * ⚠️ NOTE: This intentionally throws an error to demonstrate error handling!
+ * Simulates writing page content to disk.
  *
  * @param input.path - The page directory path
  * @param input.content - The content to write to the page
  * @returns Promise that resolves when write is complete
- * @throws Always throws "LOL" error for demonstration purposes
  *
  * @example
  * ```ts
- * try {
- *   await writePageContentsFx({ path: '/path/to/page', content: '' });
- * } catch (error) {
- *   console.error('Expected error:', error); // "LOL"
- * }
+ * await writePageContentsFx({ path: '/path/to/page', content: '' });
  * ```
  */
 export const writePageContentsFx = createEffect<
   { path: string; content: string },
   void
 >(async ({ path, content }) => {
-  throw new Error("LOL");
-  // Simulate network delay (unreachable due to error above)
+  // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 100));
 });
 
@@ -215,7 +219,6 @@ export const createPageFx = createEffect<
     const pagePath = await createPageDirectoryFx({ path, id: pageId });
 
     // Step 2: Write the page contents to disk
-    // This will throw an error, demonstrating error handling
     await writePageContentsFx({ path: pagePath, content: "" });
 
     console.log("Created page", page);
@@ -261,7 +264,7 @@ export const createDocumentFx = createEffect<void, Document>(async () => {
       path: `C:/Users/trey/${id}`,
       title: "New Document",
       pages: [],
-      workspaceIds: [],
+      workspaces: [],
     };
 
     // ⚡ OPTIMISTIC UPDATE #1: Add document to state immediately
@@ -322,14 +325,14 @@ export const $documents = createStore<DocumentsState>({})
       pages: [...state[documentId].pages, page],
     },
   }))
-  .on(documentAddedToWorkspace, (state, { documentId, workspaceId }) => {
+  .on(addWorkspaceToDocument, (state, { documentId, workspace }) => {
     const document = state[documentId];
-    if (document && !document.workspaceIds.includes(workspaceId)) {
+    if (document && !document.workspaces.some((ws) => ws.id === workspace.id)) {
       return {
         ...state,
         [documentId]: {
           ...document,
-          workspaceIds: [...document.workspaceIds, workspaceId],
+          workspaces: [...document.workspaces, workspace],
         },
       };
     }
@@ -348,6 +351,27 @@ export const $documents = createStore<DocumentsState>({})
 sample({
   clock: createDocumentRequested,
   target: createDocumentFx,
+});
+
+/**
+ * Lookup workspace and add to document
+ *
+ * When documentAddedToWorkspace is called with a workspaceId, we watch the event,
+ * look up the workspace from the current $workspaces store state, and trigger
+ * the internal addWorkspaceToDocument event.
+ *
+ * This demonstrates how to coordinate between stores in Effector.
+ */
+documentAddedToWorkspace.watch(({ documentId, workspaceId }) => {
+  const workspaces = $workspaces.getState();
+  const workspace = workspaces[workspaceId];
+
+  if (!workspace) {
+    console.warn(`Workspace ${workspaceId} not found`);
+    return;
+  }
+
+  addWorkspaceToDocument({ documentId, workspace });
 });
 
 /**

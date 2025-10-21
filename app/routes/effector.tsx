@@ -10,6 +10,8 @@ import {
   $workspaces,
   fetchWorkspacesRequested,
 } from "../effector/workspaces.store";
+// Import document actor factory to initialize document-specific behaviors
+import "../effector/document.factory";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -60,8 +62,18 @@ export default function EffectorRoute() {
           <code className="bg-purple-100 px-1 rounded">Effects</code>, and{" "}
           <code className="bg-purple-100 px-1 rounded">Stores</code> from
           Effector. Events are called directly without dispatch(). Effects
-          handle async operations with built-in loading states. Stores react
-          automatically to events.
+          handle async operations with built-in loading states. Documents store
+          direct references to workspace objects.
+        </p>
+        <p className="text-sm text-purple-800 mb-2">
+          <strong>Document Actors (Factories Pattern):</strong> Each document
+          gets its own isolated actor using{" "}
+          <code className="bg-purple-100 px-1 rounded">
+            @withease/factories
+          </code>
+          . Each actor manages document-specific behaviors including network
+          persistence (sessionStorage, 3s) and disk persistence (localStorage,
+          5s) that run in parallel. Check browser console for actor activity.
         </p>
         <p className="text-sm text-purple-700">
           <strong>Key features:</strong> Explicit event flow, first-class async
@@ -93,7 +105,7 @@ export default function EffectorRoute() {
           <div className="space-y-4">
             {Object.values(workspaces).map((workspace) => {
               const workspaceDocs = Object.values(documents).filter((doc) =>
-                doc.workspaceIds.includes(workspace.id)
+                doc.workspaces.some((ws) => ws.id === workspace.id)
               );
               return (
                 <div
@@ -135,12 +147,10 @@ export default function EffectorRoute() {
               <div className="font-medium">{doc.title}</div>
               <div className="text-sm text-gray-500">{doc.id}</div>
               <div className="text-sm mt-2">Pages: {doc.pages.length}</div>
-              {doc.workspaceIds.length > 0 && (
+              {doc.workspaces.length > 0 && (
                 <div className="text-sm mt-2">
                   <span className="font-medium">Workspaces: </span>
-                  {doc.workspaceIds
-                    .map((wsId) => workspaces[wsId]?.name || wsId)
-                    .join(", ")}
+                  {doc.workspaces.map((ws) => ws.name).join(", ")}
                 </div>
               )}
               {Object.keys(workspaces).length > 0 && (
@@ -160,7 +170,10 @@ export default function EffectorRoute() {
                   >
                     <option value="">Select workspace...</option>
                     {Object.values(workspaces)
-                      .filter((ws) => !doc.workspaceIds.includes(ws.id))
+                      .filter(
+                        (ws) =>
+                          !doc.workspaces.some((docWs) => docWs.id === ws.id)
+                      )
                       .map((ws) => (
                         <option key={ws.id} value={ws.id}>
                           {ws.name}

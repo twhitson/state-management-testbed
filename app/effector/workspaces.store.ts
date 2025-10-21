@@ -78,14 +78,14 @@ export const fetchWorkspacesFx = createEffect<void, Workspace[]>(async () => {
           path: "C:/Users/trey/workspace-1/doc-1",
           title: "Personal Website",
           pages: [],
-          workspaceIds: ["workspace-1"],
+          workspaces: [],
         },
         {
           id: "doc-workspace-1-2",
           path: "C:/Users/trey/workspace-1/doc-2",
           title: "Side Project Ideas",
           pages: [],
-          workspaceIds: ["workspace-1"],
+          workspaces: [],
         },
       ],
     },
@@ -98,7 +98,7 @@ export const fetchWorkspacesFx = createEffect<void, Workspace[]>(async () => {
           path: "C:/Users/trey/workspace-2/doc-1",
           title: "Q4 Planning",
           pages: [],
-          workspaceIds: ["workspace-2"],
+          workspaces: [],
         },
       ],
     },
@@ -111,25 +111,30 @@ export const fetchWorkspacesFx = createEffect<void, Workspace[]>(async () => {
           path: "C:/Users/trey/workspace-3/doc-1",
           title: "State Management Comparison",
           pages: [],
-          workspaceIds: ["workspace-3"],
+          workspaces: [],
         },
         {
           id: "doc-workspace-3-2",
           path: "C:/Users/trey/workspace-3/doc-2",
           title: "React Patterns",
           pages: [],
-          workspaceIds: ["workspace-3"],
+          workspaces: [],
         },
       ],
     },
   ];
 
   // Add all documents from workspaces to the documents store
-  // This demonstrates cross-store communication in Effector
+  // and populate their workspace references
   workspaces.forEach((workspace) => {
     if (workspace.documents) {
       workspace.documents.forEach((document) => {
-        documentAdded(document);
+        // Add workspace reference to the document
+        const docWithWorkspace = {
+          ...document,
+          workspaces: [{ id: workspace.id, name: workspace.name }],
+        };
+        documentAdded(docWithWorkspace);
       });
     }
   });
@@ -146,7 +151,7 @@ export const fetchWorkspacesFx = createEffect<void, Workspace[]>(async () => {
  *
  * Workspaces are simple entities with just id and name.
  * The relationship to documents is maintained on the Document type
- * via the workspaceIds array.
+ * via the workspaces array (direct object references).
  *
  * Documents from workspace fetch responses are added to the documents store,
  * not stored in workspace state.
