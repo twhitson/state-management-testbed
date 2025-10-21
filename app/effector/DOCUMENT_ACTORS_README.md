@@ -121,27 +121,27 @@ Open the browser console when using the Effector example page:
 
 1. **Create a document** - you'll see:
    ```
-   [Document Actor] Creating actor for document doc-xxx
-   [Document Actor] Initializing actor for doc-xxx
-   [Document Actor] [doc-xxx] Starting network persist (New Document)...
-   [Document Actor] [doc-xxx] Starting disk persist (New Document)...
+   [Document] Creating actor for document doc-xxx
+   [Document] Initializing actor for doc-xxx
+   [Document] [doc-xxx] Starting network persist (New Document)...
+   [Document] [doc-xxx] Starting disk persist (New Document)...
    ```
 
 2. **After 3 seconds:**
    ```
-   [Document Actor] [doc-xxx] ✓ Network persist complete (New Document)
+   [Document] [doc-xxx] ✓ Network persist complete (New Document)
    ```
 
 3. **After 5 seconds:**
    ```
-   [Document Actor] [doc-xxx] ✓ Disk persist complete (New Document)
+   [Document] [doc-xxx] ✓ Disk persist complete (New Document)
    ```
 
 4. **Load workspaces** - each document from the workspace will get its own actor:
    ```
-   [Document Actor] Creating actor for document doc-workspace-1-1
-   [Document Actor] Creating actor for document doc-workspace-1-2
-   [Document Actor] Creating actor for document doc-workspace-2-1
+   [Document] Creating actor for document doc-workspace-1-1
+   [Document] Creating actor for document doc-workspace-1-2
+   [Document] Creating actor for document doc-workspace-2-1
    ...
    ```
 

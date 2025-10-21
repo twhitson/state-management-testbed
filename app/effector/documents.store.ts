@@ -86,6 +86,19 @@ export const pageAdded = createEvent<{
 }>("pageAdded");
 
 /**
+ * Event: Rename a document
+ *
+ * @example
+ * ```ts
+ * documentRenamed({ documentId: 'doc-123', newTitle: 'Updated Title' });
+ * ```
+ */
+export const documentRenamed = createEvent<{
+  documentId: string;
+  newTitle: string;
+}>("documentRenamed");
+
+/**
  * Event: Request to add a document to a workspace (by ID)
  *
  * @example
@@ -325,6 +338,19 @@ export const $documents = createStore<DocumentsState>({})
       pages: [...state[documentId].pages, page],
     },
   }))
+  .on(documentRenamed, (state, { documentId, newTitle }) => {
+    const document = state[documentId];
+    if (document) {
+      return {
+        ...state,
+        [documentId]: {
+          ...document,
+          title: newTitle,
+        },
+      };
+    }
+    return state;
+  })
   .on(addWorkspaceToDocument, (state, { documentId, workspace }) => {
     const document = state[documentId];
     if (document && !document.workspaces.some((ws) => ws.id === workspace.id)) {

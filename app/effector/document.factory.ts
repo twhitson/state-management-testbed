@@ -24,8 +24,51 @@
  */
 
 import { createFactory, invoke } from "@withease/factories";
-import { createEffect, createEvent, sample } from "effector";
-import { $documents, type Document } from "./documents.store";
+import {
+  createEffect,
+  createEvent,
+  createStore,
+  sample,
+  type Effect,
+} from "effector";
+import { $documents, documentRenamed, type Document } from "./documents.store";
+
+/**
+ * Utility: Wait for an effect to complete (success or failure)
+ *
+ * Returns a Promise that resolves when the effect succeeds or rejects when it fails.
+ * Automatically unwatches after completion to prevent memory leaks.
+ *
+ * @param effect - The Effector effect to wait for
+ * @returns Promise that resolves with done payload or rejects with fail payload
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await waitFor(persistToSessionStorageFx);
+ *   console.log("Persistence succeeded!");
+ * } catch (error) {
+ *   console.error("Persistence failed:", error);
+ * }
+ * ```
+ */
+export function waitFor<Params, Done, Fail = Error>(
+  effect: Effect<Params, Done, Fail>
+): Promise<Done> {
+  return new Promise((resolve, reject) => {
+    const unwatchDone = effect.done.watch(({ result }) => {
+      unwatchDone();
+      unwatchFail();
+      resolve(result);
+    });
+
+    const unwatchFail = effect.fail.watch(({ error }) => {
+      unwatchDone();
+      unwatchFail();
+      reject(error);
+    });
+  });
+}
 
 /**
  * Factory: Creates a Document for a single document
@@ -54,6 +97,51 @@ const createDocumentActor = createFactory((documentId: string) => {
    * Event: Triggered when document data changes
    */
   const documentChanged = createEvent<Document>("documentChanged");
+
+  const gitStatus = createStore<{
+    status: string;
+  }>({
+    status: "clean",
+  });
+
+  // ============================================================================
+  // RENAME FUNCTION
+  // ============================================================================
+
+  /**
+   * Rename this document and watch for persistence completion/failure
+   *
+   * @param newTitle - The new title for the document
+   */
+  const renameDocument = async (newTitle: string) => {
+    const documents = $documents.getState();
+    const document = documents[documentId];
+
+    if (!document) {
+      console.warn(
+        `[Document] [${documentId}] Cannot rename - document not found`
+      );
+      return;
+    }
+
+    const previousTitle = document.title;
+    console.log(
+      `[Document] [${documentId}] Renaming from "${previousTitle}" to "${newTitle}"`
+    );
+
+    // Update the document in the store
+    documentRenamed({ documentId, newTitle });
+
+    // Watch for the next persistence instances to complete or fail
+    const result = await Promise.allSettled([
+      waitFor(persistToSessionStorageFx),
+      waitFor(persistToLocalStorageFx),
+    ]);
+
+    if (result.some((r) => r.status === "rejected")) {
+      // Rollback
+    }
+  };
 
   // ============================================================================
   // PERSISTENCE BEHAVIORS
@@ -192,9 +280,13 @@ const createDocumentActor = createFactory((documentId: string) => {
   return {
     documentId,
     documentChanged,
+    // Actor methods
+    renameDocument,
     // Persistence behaviors
     persistToSessionStorageFx,
     persistToLocalStorageFx,
+
+    gitStatus,
     // Future behaviors would be returned here
   };
 });

@@ -11,7 +11,7 @@ import {
   fetchWorkspacesRequested,
 } from "../effector/workspaces.store";
 // Import document actor factory to initialize document-specific behaviors
-import "../effector/document.factory";
+import { getDocumentActor } from "../effector/document.factory";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -38,6 +38,16 @@ export default function EffectorRoute() {
 
   const handleAddToWorkspace = (documentId: string, workspaceId: string) => {
     documentAddedToWorkspace({ documentId, workspaceId });
+  };
+
+  const handleRenameDocument = (documentId: string) => {
+    const newTitle = prompt("Enter new document title:");
+    if (newTitle && newTitle.trim()) {
+      const actor = getDocumentActor(documentId);
+      if (actor) {
+        actor.renameDocument(newTitle.trim());
+      }
+    }
   };
 
   return (
@@ -73,7 +83,9 @@ export default function EffectorRoute() {
           </code>
           . Each actor manages document-specific behaviors including network
           persistence (sessionStorage, 3s) and disk persistence (localStorage,
-          5s) that run in parallel. Check browser console for actor activity.
+          5s) that run in parallel. Try renaming a document to see the actor
+          watch for persistence completion/failures. Check browser console for
+          actor activity.
         </p>
         <p className="text-sm text-purple-700">
           <strong>Key features:</strong> Explicit event flow, first-class async
@@ -144,7 +156,15 @@ export default function EffectorRoute() {
         <div className="space-y-2">
           {Object.values(documents).map((doc) => (
             <div key={doc.id} className="p-4 border rounded">
-              <div className="font-medium">{doc.title}</div>
+              <div className="flex items-center justify-between">
+                <div className="font-medium">{doc.title}</div>
+                <button
+                  onClick={() => handleRenameDocument(doc.id)}
+                  className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                >
+                  Rename
+                </button>
+              </div>
               <div className="text-sm text-gray-500">{doc.id}</div>
               <div className="text-sm mt-2">Pages: {doc.pages.length}</div>
               {doc.workspaces.length > 0 && (
