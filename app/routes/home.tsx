@@ -87,6 +87,17 @@ export default function Home() {
               </p>
             </Link>
             <Link
+              to="/jotai"
+              className="block p-4 rounded-lg border border-sky-200 bg-sky-50 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950 dark:hover:bg-sky-900 transition-colors"
+            >
+              <h3 className="font-semibold text-sky-900 dark:text-sky-100 mb-1">
+                Jotai
+              </h3>
+              <p className="text-sm text-sky-700 dark:text-sky-300">
+                Atomic state management with minimal boilerplate
+              </p>
+            </Link>
+            <Link
               to="/effect-atom"
               className="block p-4 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:hover:bg-amber-900 transition-colors"
             >
