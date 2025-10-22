@@ -9,6 +9,7 @@ export default [
   route("redux/vanilla", "routes/redux.vanilla.tsx"),
   route("zustand", "routes/zustand.tsx"),
   route("valtio", "routes/valtio.tsx"),
+  route("bunshi", "routes/bunshi.tsx"),
   route("effector", "routes/effector.tsx"),
   route("jotai", "routes/jotai.tsx"),
   route("effect-atom", "routes/effect-atom.tsx"),

@@ -87,6 +87,17 @@ export default function Home() {
               </p>
             </Link>
             <Link
+              to="/bunshi"
+              className="block p-4 rounded-lg border border-lime-200 bg-lime-50 hover:bg-lime-100 dark:border-lime-800 dark:bg-lime-950 dark:hover:bg-lime-900 transition-colors"
+            >
+              <h3 className="font-semibold text-lime-900 dark:text-lime-100 mb-1">
+                Bunshi
+              </h3>
+              <p className="text-sm text-lime-700 dark:text-lime-300">
+                Dependency injection with Nanostores inside molecules
+              </p>
+            </Link>
+            <Link
               to="/effector"
               className="block p-4 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950 dark:hover:bg-indigo-900 transition-colors"
             >

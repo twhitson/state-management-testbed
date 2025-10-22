@@ -815,6 +815,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nanostores/react@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@nanostores/react@npm:1.0.0"
+  peerDependencies:
+    nanostores: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^1.0.0
+    react: ">=18.0.0"
+  checksum: 10c0/a7b1e89acf478f0a7d7b21208163ffd3c0d11e2fbd41ec112ac43866824bd7b245617c7b31f3e1f9f993b4f8e4174266aef093c6886103235cc84aa49d22c938
+  languageName: node
+  linkType: hard
+
 "@napi-rs/wasm-runtime@npm:^1.0.5":
   version: 1.0.7
   resolution: "@napi-rs/wasm-runtime@npm:1.0.7"
@@ -1800,6 +1810,21 @@ __metadata:
   version: 1.1.2
   resolution: "buffer-from@npm:1.1.2"
   checksum: 10c0/124fff9d66d691a86d3b062eff4663fe437a9d9ee4b47b1b9e97f5a5d14f6d5399345db80f796827be7c95e70a8e765dd404b7c3ff3b3324f98e9b0c8826cc34
+  languageName: node
+  linkType: hard
+
+"bunshi@npm:^2.1.5":
+  version: 2.1.5
+  resolution: "bunshi@npm:2.1.5"
+  peerDependencies:
+    react: ">=16"
+    vue: ">=3"
+  peerDependenciesMeta:
+    react:
+      optional: true
+    vue:
+      optional: true
+  checksum: 10c0/25c4e3ffc458f189885636b4f2d9a3a018367ebcbc60295609213ed30d4729b4870689e8d82646a2d1df73f7e5be0da8238683a068583afce8c81063cdd6d8f8
   languageName: node
   linkType: hard
 
@@ -3393,6 +3418,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"nanostores@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "nanostores@npm:1.0.1"
+  checksum: 10c0/9fa5bd9f4beb1ac7cd83c935357057e4217e2eb0e36ef93ce87ed8a6814590c44e7aa843e9337089222cfb5231fdf0474d207debd12787b4582519393253fe22
+  languageName: node
+  linkType: hard
+
 "negotiator@npm:0.6.3":
   version: 0.6.3
   resolution: "negotiator@npm:0.6.3"
@@ -4359,6 +4391,7 @@ __metadata:
     "@effect/experimental": "npm:^0.56.0"
     "@effect/platform": "npm:^0.92.1"
     "@effect/rpc": "npm:^0.71.0"
+    "@nanostores/react": "npm:^1.0.0"
     "@react-router/dev": "npm:^7.9.2"
     "@react-router/node": "npm:^7.9.2"
     "@react-router/serve": "npm:^7.9.2"
@@ -4369,6 +4402,7 @@ __metadata:
     "@types/react": "npm:^19.1.13"
     "@types/react-dom": "npm:^19.1.9"
     "@withease/factories": "npm:^1.0.5"
+    bunshi: "npm:^2.1.5"
     effect: "npm:^3.18.4"
     effector: "npm:^23.4.4"
     effector-react: "npm:^23.3.0"
@@ -4379,6 +4413,7 @@ __metadata:
     mobx: "npm:^6.15.0"
     mobx-keystone: "npm:^1.11.4"
     mobx-react-lite: "npm:^4.0.9"
+    nanostores: "npm:^1.0.1"
     react: "npm:^19.1.1"
     react-dom: "npm:^19.1.1"
     react-redux: "npm:^9.2.0"
