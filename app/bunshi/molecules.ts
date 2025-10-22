@@ -12,8 +12,10 @@
  * - Perfect encapsulation and no external state leakage
  */
 
-import { molecule, createScope } from "bunshi";
+import { molecule, createScope, use } from "bunshi";
 import { atom, map, computed } from "nanostores";
+import { cachedMap } from "./utils/cachedMap";
+import { persistedAtom } from "./utils/persistedAtom";
 
 /**
  * Types
@@ -34,6 +36,15 @@ export type Document = {
 export type Workspace = {
   id: string;
   name: string;
+};
+
+export type DocumentMetadata = {
+  title: string;
+  lastModified: string;
+  createdAt: string;
+  author: string;
+  tags: string[];
+  description: string;
 };
 
 /**
@@ -61,45 +72,90 @@ export const PageScope = createScope<{ documentId: string; pageId: string }>(
  *
  * @remarks
  * This molecule encapsulates:
- * - Document state (nanostore atom)
+ * - Document state (from database via cachedMap)
+ * - Document metadata (stored to disk via persistedAtom)
  * - Document actions (rename, addToWorkspace, etc.)
+ * - Metadata actions (update tags, description, etc.)
  *
  * Each document scope gets its own instance with isolated state and actions.
  */
 export const DocumentMolecule = molecule((mol, scope) => {
+  const documentsRegistry = use(DocumentsRegistryMolecule);
   const { documentId } = scope(DocumentScope);
 
-  // Internal nanostore
-  const store = atom<Document>({
-    id: documentId,
-    path: `C:/Users/trey/${documentId}`,
-    title: "New Document",
-    workspaceIds: [],
+  console.debug(
+    `[DocumentMolecule] Creating/accessing molecule for document: ${documentId}`
+  );
+
+  const $document = computed(
+    documentsRegistry.registryStore,
+    (documents) => documents[documentId]
+  );
+
+  // Create persisted atom for metadata stored to disk
+  const [
+    $metadata,
+    {
+      isLoading: isMetadataLoading,
+      isPersisting: isMetadataPersisting,
+      mutate: mutateMetadata,
+    },
+  ] = persistedAtom<DocumentMetadata>({
+    filePath: `${$document.get()?.path || `/tmp/${documentId}`}/metadata.json`,
+    defaultValue: {
+      title: $document.get().title,
+      lastModified: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      author: "Unknown",
+      tags: [],
+      description: "",
+    },
+    debounceMs: 500,
   });
 
   // Actions encapsulated with state
   return {
-    // Expose the store for subscriptions
-    store,
+    // Expose the stores for subscriptions
+    document: $document,
+    metadata: $metadata,
 
-    // Get current document
-    get: () => store.get(),
+    isMetadataLoading,
+    isMetadataPersisting,
 
     // Rename document
-    rename: (newTitle: string) => {
-      const doc = store.get();
-      store.set({
-        ...doc,
+    rename: async (newTitle: string) => {
+      const currentTitle = $document.get().title;
+
+      const updateResult = documentsRegistry.update(documentId, {
         title: newTitle,
       });
+
+      const metadataResult = mutateMetadata((current) => ({
+        ...current,
+        title: newTitle,
+      }));
+
+      const results = await Promise.allSettled([updateResult, metadataResult]);
+
+      if (results.some((result) => result.status === "rejected")) {
+        // Rollback the change
+        void documentsRegistry.update(documentId, {
+          title: currentTitle,
+        });
+
+        console.error(
+          `[Document ${documentId}]`,
+          "Failed to rename document, rolling back",
+          results
+        );
+      }
     },
 
     // Add to workspace
     addToWorkspace: (workspaceId: string) => {
-      const doc = store.get();
+      const doc = $document.get();
       if (!doc.workspaceIds.includes(workspaceId)) {
-        store.set({
-          ...doc,
+        documentsRegistry.update(documentId, {
           workspaceIds: [...doc.workspaceIds, workspaceId],
         });
       }
@@ -107,11 +163,60 @@ export const DocumentMolecule = molecule((mol, scope) => {
 
     // Remove from workspace
     removeFromWorkspace: (workspaceId: string) => {
-      const doc = store.get();
-      store.set({
-        ...doc,
+      const doc = $document.get();
+      documentsRegistry.update(documentId, {
         workspaceIds: doc.workspaceIds.filter((id) => id !== workspaceId),
       });
+    },
+
+    // Metadata actions
+
+    // Update description
+    updateDescription: async (description: string) => {
+      return mutateMetadata((current) => ({
+        ...current,
+        description,
+        lastModified: new Date().toISOString(),
+      }));
+    },
+
+    // Add tag
+    addTag: async (tag: string) => {
+      const current = $metadata.get();
+      if (!current.tags.includes(tag)) {
+        return mutateMetadata((current) => ({
+          ...current,
+          tags: [...current.tags, tag],
+          lastModified: new Date().toISOString(),
+        }));
+      }
+    },
+
+    // Remove tag
+    removeTag: async (tag: string) => {
+      return mutateMetadata((current) => ({
+        ...current,
+        tags: current.tags.filter((t) => t !== tag),
+        lastModified: new Date().toISOString(),
+      }));
+    },
+
+    // Update author
+    updateAuthor: async (author: string) => {
+      return mutateMetadata((current) => ({
+        ...current,
+        author,
+        lastModified: new Date().toISOString(),
+      }));
+    },
+
+    // Update metadata (generic)
+    updateMetadata: async (updates: Partial<DocumentMetadata>) => {
+      return mutateMetadata((current) => ({
+        ...current,
+        ...updates,
+        lastModified: new Date().toISOString(),
+      }));
     },
   };
 });
@@ -131,7 +236,7 @@ export const PageMolecule = molecule((mol, scope) => {
   const { pageId } = scope(PageScope);
 
   // Internal nanostore
-  const store = atom<Page>({
+  const $page = atom<Page>({
     id: pageId,
     title: "New Page",
     content: "",
@@ -140,15 +245,15 @@ export const PageMolecule = molecule((mol, scope) => {
   // Actions encapsulated with state
   return {
     // Expose the store for subscriptions
-    store,
+    page: $page,
 
     // Get current page
-    get: () => store.get(),
+    get: () => $page.get(),
 
     // Update page title
     updateTitle: (newTitle: string) => {
-      const page = store.get();
-      store.set({
+      const page = $page.get();
+      $page.set({
         ...page,
         title: newTitle,
       });
@@ -156,8 +261,8 @@ export const PageMolecule = molecule((mol, scope) => {
 
     // Update page content
     updateContent: (newContent: string) => {
-      const page = store.get();
-      store.set({
+      const page = $page.get();
+      $page.set({
         ...page,
         content: newContent,
       });
@@ -165,8 +270,8 @@ export const PageMolecule = molecule((mol, scope) => {
 
     // Update page (generic)
     update: (updates: Partial<Page>) => {
-      const page = store.get();
-      store.set({
+      const page = $page.get();
+      $page.set({
         ...page,
         ...updates,
       });
@@ -268,8 +373,8 @@ export const PagesRegistryMolecule = molecule((mol, scope) => {
  * NOT scoped, so it's a singleton shared across all documents.
  */
 export const WorkspacesMolecule = molecule(() => {
-  // Internal nanostore
-  const workspaces = map<Record<string, Workspace>>({});
+  const workspaces = map<Record<string, Workspace>>();
+
   const workspaceIds = computed(workspaces, (workspaces) =>
     Object.keys(workspaces)
   );
@@ -291,14 +396,14 @@ export const WorkspacesMolecule = molecule(() => {
     get: (workspaceId: string) => workspaces.get()[workspaceId],
 
     // Fetch workspaces from database
-    fetch: async (): Promise<Workspace[]> => {
+    fetch: async () => {
       console.log("Fetching workspaces from database");
 
       // Simulate network delay
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Simulated database response
-      const workspaces: Workspace[] = [
+      const testWorkspaces: Workspace[] = [
         { id: "workspace-1", name: "Personal Projects" },
         { id: "workspace-2", name: "Work Documents" },
         { id: "workspace-3", name: "Research" },
@@ -306,16 +411,11 @@ export const WorkspacesMolecule = molecule(() => {
 
       // Update store
       const newWorkspaces: Record<string, Workspace> = {};
-      workspaces.forEach((ws) => {
+      testWorkspaces.forEach((ws) => {
         newWorkspaces[ws.id] = ws;
       });
 
-      workspaces.set({
-        ...workspaces.get(),
-        ...newWorkspaces,
-      });
-
-      return workspaces;
+      workspaces.set(newWorkspaces);
     },
 
     // Create workspace
@@ -344,7 +444,13 @@ export const WorkspacesMolecule = molecule(() => {
  */
 export const DocumentsRegistryMolecule = molecule(() => {
   // Internal nanostores
-  const registryStore = map<Record<string, string[]>>({});
+  const [registryStore, { onPersist, flush }] = cachedMap<
+    Record<string, Document>
+  >({
+    table: "documents",
+    keys: ["id"],
+    defaultValue: {},
+  });
 
   const documentIdsStore = computed(registryStore, (documents) =>
     Object.keys(documents)
@@ -362,6 +468,15 @@ export const DocumentsRegistryMolecule = molecule(() => {
     documentIdsStore,
     countStore,
 
+    update: (documentId: string, updates: Partial<Document>) => {
+      registryStore.setKey(documentId, {
+        ...registryStore.get()[documentId],
+        ...updates,
+      });
+
+      return onPersist();
+    },
+
     // Get all documents
     getAll: () => registryStore.get(),
 
@@ -376,7 +491,12 @@ export const DocumentsRegistryMolecule = molecule(() => {
       const documentId = crypto.randomUUID();
 
       // Add to registry
-      registryStore.setKey(documentId, []);
+      registryStore.setKey(documentId, {
+        id: documentId,
+        path: `C:/Users/trey/${documentId}`,
+        title: "New Document",
+        workspaceIds: [],
+      });
 
       return documentId;
     },
@@ -388,13 +508,25 @@ export const DocumentsRegistryMolecule = molecule(() => {
 
     // Load sample documents
     loadSamples: () => {
-      const sampleDocumentIds = [
-        "doc-sample-1",
-        "doc-sample-2",
-        "doc-sample-3",
-      ];
-      sampleDocumentIds.forEach((documentId) => {
-        registryStore.setKey(documentId, []);
+      registryStore.setKey("doc-sample-1", {
+        id: "doc-sample-1",
+        path: `C:/Users/trey/doc-sample-1`,
+        title: "Personal Project Notes",
+        workspaceIds: ["workspace-1"],
+      });
+
+      registryStore.setKey("doc-sample-2", {
+        id: "doc-sample-2",
+        path: `C:/Users/trey/doc-sample-2`,
+        title: "Q4 Planning Document",
+        workspaceIds: ["workspace-2"],
+      });
+
+      registryStore.setKey("doc-sample-3", {
+        id: "doc-sample-3",
+        path: `C:/Users/trey/doc-sample-3`,
+        title: "Research Paper Draft",
+        workspaceIds: ["workspace-3", "workspace-1"],
       });
     },
   };

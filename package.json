@@ -24,6 +24,7 @@
     "effect": "^3.18.4",
     "effector": "^23.4.4",
     "effector-react": "^23.3.0",
+    "es-toolkit": "^1.40.0",
     "isbot": "^5",
     "jotai": "^2.15.0",
     "jotai-devtools": "^0.13.0",

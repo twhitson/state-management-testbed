@@ -2,6 +2,7 @@ import type { Route } from "./+types/bunshi";
 import { Link } from "react-router";
 import { useStore } from "@nanostores/react";
 import { useMolecule, ScopeProvider } from "bunshi/react";
+import { memo } from "react";
 import {
   DocumentScope,
   PageScope,
@@ -13,6 +14,7 @@ import {
   type Workspace,
   type Page,
 } from "../bunshi/molecules";
+import { useMutation } from "../hooks";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -30,8 +32,10 @@ export function meta({}: Route.MetaArgs) {
  * @remarks
  * This component wraps a page in its own Bunshi scope (nested within DocumentScope).
  * Each page gets its own PageMolecule instance with isolated state.
+ *
+ * Memoized to prevent unnecessary re-renders when parent state changes.
  */
-function PageItem({
+const PageItem = memo(function PageItem({
   documentId,
   pageId,
 }: {
@@ -43,7 +47,7 @@ function PageItem({
       <PageContent />
     </ScopeProvider>
   );
-}
+});
 
 /**
  * PageContent Component
@@ -56,7 +60,7 @@ function PageContent() {
   const pageMol = useMolecule(PageMolecule);
   const pagesRegistryMol = useMolecule(PagesRegistryMolecule);
 
-  const page = useStore(pageMol.store);
+  const page = useStore(pageMol.page);
 
   const handleUpdateTitle = () => {
     const newTitle = prompt("Enter new page title:", page.title);
@@ -102,14 +106,20 @@ function PageContent() {
  * This component wraps a document in its own Bunshi scope.
  * The ScopeProvider creates an isolated context where DocumentMolecule
  * and PagesRegistryMolecule get their own instances for this specific document.
+ *
+ * Memoized to prevent unnecessary re-renders when parent state changes.
  */
-function DocumentItem({ documentId }: { documentId: string }) {
+const DocumentItem = memo(function DocumentItem({
+  documentId,
+}: {
+  documentId: string;
+}) {
   return (
     <ScopeProvider scope={DocumentScope} value={{ documentId }}>
       <DocumentContent />
     </ScopeProvider>
   );
-}
+});
 
 /**
  * DocumentContent Component
@@ -129,16 +139,22 @@ function DocumentContent() {
   const registryMol = useMolecule(DocumentsRegistryMolecule);
 
   // Subscribe to stores within molecules
-  const document = useStore(documentMol.store);
+  const document = useStore(documentMol.document);
+  const metadata = useStore(documentMol.metadata);
+  const isMetadataLoading = useStore(documentMol.isMetadataLoading);
+  const isMetadataPersisting = useStore(documentMol.isMetadataPersisting);
   const pageIds = useStore(pagesRegistryMol.registryStore);
   const pagesCount = useStore(pagesRegistryMol.countStore);
   const workspaces = useStore(workspacesMol.workspaces);
+
+  // Set up mutation for renaming
+  const renameMutation = useMutation(documentMol.rename);
 
   // Event handlers call actions directly on molecules
   const handleRenameDocument = () => {
     const newTitle = prompt("Enter new document title:");
     if (newTitle && newTitle.trim()) {
-      documentMol.rename(newTitle.trim());
+      renameMutation.mutate(newTitle.trim());
     }
   };
 
@@ -156,6 +172,27 @@ function DocumentContent() {
     documentMol.addToWorkspace(workspaceId);
   };
 
+  const handleUpdateDescription = () => {
+    const description = prompt(
+      "Enter document description:",
+      metadata.description
+    );
+    if (description !== null) {
+      documentMol.updateDescription(description);
+    }
+  };
+
+  const handleAddTag = () => {
+    const tag = prompt("Enter a tag:");
+    if (tag && tag.trim()) {
+      documentMol.addTag(tag.trim());
+    }
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    documentMol.removeTag(tag);
+  };
+
   const workspacesArray = Object.values(workspaces) as Workspace[];
 
   return (
@@ -165,9 +202,10 @@ function DocumentContent() {
         <div className="flex gap-2">
           <button
             onClick={handleRenameDocument}
-            className="px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200"
+            disabled={renameMutation.isLoading}
+            className="px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Rename
+            {renameMutation.isLoading ? "Renaming..." : "Rename"}
           </button>
           <button
             onClick={handleCreatePage}
@@ -185,6 +223,73 @@ function DocumentContent() {
       </div>
 
       <div className="text-sm text-gray-500 mb-2">ID: {document.id}</div>
+
+      {/* Document Metadata Section (Disk-Persisted) */}
+      <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-semibold text-purple-900">
+            📁 Document Metadata (Disk)
+            {isMetadataLoading && (
+              <span className="ml-2 text-xs text-purple-600">(Loading...)</span>
+            )}
+            {isMetadataPersisting && (
+              <span className="ml-2 text-xs text-purple-600 animate-pulse">
+                (Saving to disk...)
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="text-xs space-y-1 mb-2">
+          <div>
+            <span className="font-medium text-purple-800">Author:</span>{" "}
+            <span className="text-purple-700">{metadata.author}</span>
+          </div>
+          <div>
+            <span className="font-medium text-purple-800">Description:</span>{" "}
+            <span className="text-purple-700">
+              {metadata.description || "(No description)"}
+            </span>
+          </div>
+          {metadata.tags.length > 0 && (
+            <div>
+              <span className="font-medium text-purple-800">Tags:</span>{" "}
+              <div className="inline-flex gap-1 flex-wrap mt-1">
+                {metadata.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-200 text-purple-800 rounded-full text-xs"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:text-purple-900"
+                      title="Remove tag"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-1">
+          <button
+            onClick={handleUpdateDescription}
+            className="px-2 py-1 text-xs bg-purple-200 text-purple-800 rounded hover:bg-purple-300"
+          >
+            Edit Description
+          </button>
+          <button
+            onClick={handleAddTag}
+            className="px-2 py-1 text-xs bg-purple-200 text-purple-800 rounded hover:bg-purple-300"
+          >
+            Add Tag
+          </button>
+        </div>
+      </div>
 
       <div className="text-sm mb-2">
         <span className="font-medium">Pages:</span> {pagesCount}
@@ -247,6 +352,7 @@ export default function BunshiRoute() {
   const documentIds = useStore(registryMol.documentIdsStore);
   const documentsCount = useStore(registryMol.countStore);
   const workspacesArray = useStore(workspacesMol.workspaceArray);
+  const allDocuments = useStore(registryMol.registryStore);
 
   // Event handlers call actions directly on molecules
   const handleCreateDocument = async () => {
@@ -273,71 +379,6 @@ export default function BunshiRoute() {
       <p className="text-gray-600 mb-6">
         Using Bunshi for dependency injection with Nanostores
       </p>
-
-      <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded">
-        <h3 className="font-semibold text-emerald-900 mb-2">
-          Implementation Details
-        </h3>
-        <p className="text-sm text-emerald-800 mb-2">
-          <strong>Encapsulated Molecules:</strong> Each Bunshi molecule contains
-          both nanostores (state) and actions (behavior) in a single unit. This
-          provides perfect encapsulation and object-oriented design.
-        </p>
-        <p className="text-sm text-emerald-800 mb-2">
-          <strong>Nested Scopes Hierarchy:</strong> Three-level scoping
-          architecture:
-        </p>
-        <ul className="text-sm text-emerald-800 mb-2 ml-6 list-disc space-y-1">
-          <li>
-            <strong>Global:</strong>{" "}
-            <code className="bg-emerald-100 px-1 rounded">
-              DocumentsRegistryMolecule
-            </code>
-            ,{" "}
-            <code className="bg-emerald-100 px-1 rounded">
-              WorkspacesMolecule
-            </code>
-          </li>
-          <li>
-            <strong>DocumentScope:</strong>{" "}
-            <code className="bg-emerald-100 px-1 rounded">
-              DocumentMolecule
-            </code>
-            ,{" "}
-            <code className="bg-emerald-100 px-1 rounded">
-              PagesRegistryMolecule
-            </code>
-          </li>
-          <li>
-            <strong>PageScope (nested in DocumentScope):</strong>{" "}
-            <code className="bg-emerald-100 px-1 rounded">PageMolecule</code>
-          </li>
-          <li>Each page is its own molecule with complete isolation!</li>
-        </ul>
-        <p className="text-sm text-emerald-800 mb-2">
-          <strong>Usage Pattern:</strong>
-        </p>
-        <pre className="text-xs bg-emerald-100 p-2 rounded mb-2 overflow-x-auto">
-          {`// Wrap in scope
-<ScopeProvider scope={PageScope} value={{ pageId }}>
-  <PageContent />
-</ScopeProvider>
-
-// Access molecule
-const pageMol = useMolecule(PageMolecule);
-
-// Subscribe to its state
-const page = useStore(pageMol.store);
-
-// Call its actions
-pageMol.updateTitle("New Title");`}
-        </pre>
-        <p className="text-sm text-emerald-700">
-          <strong>Benefits:</strong> Perfect encapsulation, nested scopes, each
-          page/document is its own molecule, no shared state, automatic cleanup,
-          and consistent scoping pattern throughout.
-        </p>
-      </div>
 
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
         <div className="text-sm text-blue-800">
@@ -366,19 +407,43 @@ pageMol.updateTitle("New Title");`}
             Workspaces ({workspacesArray.length})
           </h2>
           <div className="space-y-4">
-            {workspacesArray.map((workspace) => (
-              <div
-                key={workspace.id}
-                className="p-4 border border-emerald-200 rounded bg-emerald-50"
-              >
-                <div className="font-semibold text-lg text-emerald-900">
-                  {workspace.name}
+            {workspacesArray.map((workspace) => {
+              // Get documents that belong to this workspace
+              const workspaceDocuments = Object.values(allDocuments).filter(
+                (doc) => doc.workspaceIds.includes(workspace.id)
+              );
+
+              return (
+                <div
+                  key={workspace.id}
+                  className="p-4 border border-emerald-200 rounded bg-emerald-50"
+                >
+                  <div className="font-semibold text-lg text-emerald-900">
+                    {workspace.name}
+                  </div>
+                  <div className="text-sm text-emerald-700 mt-1">
+                    {workspace.id}
+                  </div>
+                  {workspaceDocuments.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-emerald-300">
+                      <div className="text-sm font-medium text-emerald-900 mb-2">
+                        Documents ({workspaceDocuments.length}):
+                      </div>
+                      <ul className="space-y-1">
+                        {workspaceDocuments.map((doc) => (
+                          <li
+                            key={doc.id}
+                            className="text-sm text-emerald-800 pl-2"
+                          >
+                            • {doc.title}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm text-emerald-700 mt-1">
-                  {workspace.id}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
