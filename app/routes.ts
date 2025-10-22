@@ -8,6 +8,7 @@ export default [
   route("redux/observable", "routes/redux.observable.tsx"),
   route("redux/vanilla", "routes/redux.vanilla.tsx"),
   route("zustand", "routes/zustand.tsx"),
+  route("valtio", "routes/valtio.tsx"),
   route("effector", "routes/effector.tsx"),
   route("jotai", "routes/jotai.tsx"),
   route("effect-atom", "routes/effect-atom.tsx"),

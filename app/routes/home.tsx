@@ -76,6 +76,17 @@ export default function Home() {
               </p>
             </Link>
             <Link
+              to="/valtio"
+              className="block p-4 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950 dark:hover:bg-teal-900 transition-colors"
+            >
+              <h3 className="font-semibold text-teal-900 dark:text-teal-100 mb-1">
+                Valtio
+              </h3>
+              <p className="text-sm text-teal-700 dark:text-teal-300">
+                Proxy-based state with mutable API and proxyMap collections
+              </p>
+            </Link>
+            <Link
               to="/effector"
               className="block p-4 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950 dark:hover:bg-indigo-900 transition-colors"
             >
