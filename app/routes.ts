@@ -13,4 +13,5 @@ export default [
   route("effector", "routes/effector.tsx"),
   route("jotai", "routes/jotai.tsx"),
   route("effect-atom", "routes/effect-atom.tsx"),
+  route("tanstack-state", "routes/tanstack-state.tsx"),
 ] satisfies RouteConfig;
