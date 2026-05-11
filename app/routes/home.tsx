@@ -131,6 +131,17 @@ export default function Home() {
               </p>
             </Link>
             <Link
+              to="/tanstack-state"
+              className="block p-4 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:hover:bg-emerald-900 transition-colors"
+            >
+              <h3 className="font-semibold text-emerald-900 dark:text-emerald-100 mb-1">
+                TanStack State
+              </h3>
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                Selector-based state with TanStack Store actions
+              </p>
+            </Link>
+            <Link
               to="/mobx-keystone"
               className="block p-4 rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950 dark:hover:bg-orange-900 transition-colors"
             >
